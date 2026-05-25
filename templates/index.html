@@ -553,6 +553,31 @@
     #reset-banner { display: none; margin-top: 0; }
     #reset-banner.visible { display: flex; justify-content: center; }
     #reset-banner .btn { min-width: 240px; justify-content: center; }
+
+    /* ── Select (model_type) ── */
+    .param-field select {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      font-family: 'Epilogue', sans-serif;
+      font-size: 0.8rem;
+      color: var(--text);
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9a94'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+    }
+    .param-field select:focus {
+      outline: none;
+      border-color: var(--border-hover);
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.04);
+    }
   </style>
 </head>
 <body>
@@ -570,7 +595,7 @@
       <p class="desc-label">RANSAC</p>
       <p class="desc-text">
         Вероятностный итеративный алгоритм, устойчивый к выбросам. Перед его запуском изображение
-        проходит предобработку — из него извлекаются потенциально значимые точки. Среди них
+        проходит предобработку - из него извлекаются потенциально значимые точки. Среди них
         <em>возможно окажутся аномалии</em>, но это не проблема: RANSAC специально разработан
         для работы с зашумлёнными данными и уверенно отделяет полезный сигнал от случайного шума.
       </p>
@@ -581,7 +606,7 @@
     <span class="desc-icon">🔬</span>
     <div>
       <p class="desc-label">Алгоритм нахождения контуров</p>
-      <p class="desc-text">Сам по себе RANSAC не работает напрямую с пикселями — нужна предварительная отборка точек.</p>
+      <p class="desc-text">Сам по себе RANSAC не работает напрямую с пикселями - нужна предварительная отборка точек.</p>
       <div class="algo-steps">
         <div class="algo-step">
           <span class="step-num">1</span>
@@ -589,11 +614,11 @@
         </div>
         <div class="algo-step">
           <span class="step-num">2</span>
-          <span class="step-text">RANSAC <em>итеративно</em> ищет наборы «хороших» точек, образующих линии — после каждой найденной линии уже использованные точки удаляются из выборки.</span>
+          <span class="step-text">RANSAC <em>итеративно</em> ищет наборы «хороших» точек, образующих линии - после каждой найденной линии уже использованные точки удаляются из выборки.</span>
         </div>
         <div class="algo-step">
           <span class="step-num">3</span>
-          <span class="step-text">Опционально — <em>фильтрация выбросов</em> внутри каждой итерации для повышения точности аппроксимации.</span>
+          <span class="step-text">Опционально - <em>фильтрация выбросов</em> внутри каждой итерации для повышения точности аппроксимации.</span>
         </div>
         <div class="algo-step">
           <span class="step-num">4</span>
@@ -606,11 +631,11 @@
   <div class="desc-card c-light">
     <span class="desc-icon">📐</span>
     <div>
-      <p class="desc-label">МНК — метод наименьших квадратов</p>
+      <p class="desc-label">МНК - метод наименьших квадратов</p>
       <p class="desc-text">
         Классический детерминированный подход: минимизирует суммарное квадратичное отклонение
         всех точек от искомой фигуры. <em>Быстрый и точный</em> на чистых данных, но чувствителен
-        к выбросам — именно поэтому сравнение с RANSAC так показательно.
+        к выбросам - именно поэтому сравнение с RANSAC так показательно.
       </p>
     </div>
   </div>
@@ -623,29 +648,43 @@
   </div>
   <table class="params-table">
     <tr>
+      <td class="param-name">model_type</td>
+      <td class="param-type">enum</td>
+      <td class="param-desc">Выбор теоретической модели для аппроксимации набора точек:
+        <em>line</em> - прямая,
+        <em>circle</em> - окружность,
+        <em>parabola</em> - парабола.
+      </td>
+    </tr>
+    <tr>
       <td class="param-name">w</td>
-      <td class="param-type">float · (0, 1)</td>
+      <td class="param-type">float (0, 1)</td>
       <td class="param-desc">Ожидаемая доля «хороших» точек в наборе данных. Влияет на число итераций: чем меньше, тем больше попыток потребуется RANSAC для нахождения корректной гипотезы.</td>
     </tr>
     <tr>
       <td class="param-name">E</td>
-      <td class="param-type">float · &gt; 0</td>
+      <td class="param-type">float &gt; 0</td>
       <td class="param-desc">Порог функции оценки принадлежности точки к гипотезе. Точки, отклонение которых не превышает E, считаются «хорошими» (инлайерами).</td>
     </tr>
     <tr>
       <td class="param-name">min_length</td>
-      <td class="param-type">int · px · &gt; 0</td>
+      <td class="param-type">int px &gt; 0</td>
       <td class="param-desc">Минимальная длина линии в пикселях. Линии короче этого значения отбрасываются как незначимые.</td>
     </tr>
     <tr>
-      <td class="param-name">max_lines</td>
-      <td class="param-type">int · &gt; 0</td>
-      <td class="param-desc">Максимальное количество аппроксимируемых линий. Алгоритм останавливается, как только находит указанное число линий или исчерпывает точки.</td>
+      <td class="param-name">max_contours</td>
+      <td class="param-type">int &gt; 0</td>
+      <td class="param-desc">Максимальное количество аппроксимируемых моделей одного типа. Алгоритм останавливается, как только находит указанное число контуров или исчерпывает точки (остались только аномалии).</td>
     </tr>
     <tr>
       <td class="param-name">filtered</td>
       <td class="param-type">bool</td>
       <td class="param-desc">Включить фильтрацию выбросов на каждой итерации. При активации точки, сильно отклоняющиеся от найденной линии, дополнительно исключаются из выборки.</td>
+    </tr>
+     <tr>
+      <td class="param-name">find_contour</td>
+      <td class="param-type">bool</td>
+      <td class="param-desc">Включить нахождение контуров произвольных объектов. При активации будет использовать одну из выбранных в model_type моделей для выяснения контура объекта.</td>
     </tr>
   </table>
 </div>
@@ -655,6 +694,16 @@
 
   <!-- Param inputs -->
   <div class="params-grid">
+    <div class="param-field">
+      <label for="inp-model">mode_type</label>
+      <span class="param-hint">выбор теоретической модели</span>
+      <select id="inp-model">
+        <option value="line">line</option>
+        <option value="circle">circle</option>
+        <option value="parabola">parabola</option>
+      </select>
+      <span class="field-error"></span>
+    </div>
     <div class="param-field">
       <label for="inp-w">w</label>
       <span class="param-hint">доля хороших точек</span>
@@ -674,8 +723,8 @@
       <span class="field-error" id="err-ml"></span>
     </div>
     <div class="param-field">
-      <label for="inp-mx">max_lines</label>
-      <span class="param-hint">макс. линий</span>
+      <label for="inp-mx">max_contours</label>
+      <span class="param-hint">макс. кол-во контуров</span>
       <input type="number" id="inp-mx" value="5" min="1" step="1" />
       <span class="field-error" id="err-mx"></span>
     </div>
@@ -686,6 +735,15 @@
         <input type="checkbox" id="inp-filtered" />
         <span class="toggle-track"></span>
         <span class="toggle-label" id="filtered-label">выкл</span>
+      </label>
+    </div>
+    <div class="checkbox-field">
+      <span class="top-label">find_contour</span>
+      <span class="param-hint">находить контуры</span>
+      <label class="toggle-wrap">
+        <input type="checkbox" id="inp-find-contour" />
+        <span class="toggle-track"></span>
+        <span class="toggle-label" id="find-contour-label">выкл</span>
       </label>
     </div>
   </div>
@@ -730,7 +788,7 @@
     <div class="result-block">
       <div class="result-header">
         <span class="method-badge">RANSAC</span>
-        <span class="result-detection">Обнаружено:<br><strong id="text-ransac">—</strong></span>
+        <span class="result-detection">Обнаружено:<br><strong id="text-ransac">-</strong></span>
       </div>
       <div class="result-img-wrap">
         <img id="img-ransac" src="" alt="Результат RANSAC" />
@@ -739,7 +797,7 @@
     <div class="result-block">
       <div class="result-header">
         <span class="method-badge">МНК</span>
-        <span class="result-detection">Обнаружено:<br><strong id="text-mnk">—</strong></span>
+        <span class="result-detection">Обнаружено:<br><strong id="text-mnk">-</strong></span>
       </div>
       <div class="result-img-wrap">
         <img id="img-mnk" src="" alt="Результат МНК" />
@@ -767,9 +825,15 @@
   const newBtn      = document.getElementById('new-btn');
   const filteredCb  = document.getElementById('inp-filtered');
   const filteredLbl = document.getElementById('filtered-label');
+  const findContourCb  = document.getElementById('inp-find-contour');
+  const findContourLbl = document.getElementById('find-contour-label');
 
   filteredCb.addEventListener('change', () => {
     filteredLbl.textContent = filteredCb.checked ? 'вкл' : 'выкл';
+  });
+
+  findContourCb.addEventListener('change', () => {
+    findContourLbl.textContent = findContourCb.checked ? 'вкл' : 'выкл';
   });
 
   let uploadedFilename = null;
@@ -848,8 +912,8 @@
   }
 
   function showResults(data) {
-    document.getElementById('text-ransac').textContent = data.text1;
-    document.getElementById('text-mnk').textContent    = data.text2;
+    document.getElementById('text-ransac').innerHTML = data.text1.replace(/\n/g, '<br>');
+    document.getElementById('text-mnk').innerHTML    = data.text2.replace(/\n/g, '<br>');;
     document.getElementById('img-ransac').src = data.ransac_img + '?t=' + Date.now();
     document.getElementById('img-mnk').src    = data.mnk_img    + '?t=' + Date.now();
     resultsEl.classList.add('visible');
@@ -907,11 +971,13 @@
     const params = {
       session_id: sessionId,
       filename:   uploadedFilename,
+      model_type: document.getElementById('inp-model').value,
       w:          parseFloat(document.getElementById('inp-w').value),
       E:          parseFloat(document.getElementById('inp-e').value),
       min_length: parseInt(document.getElementById('inp-ml').value),
       max_lines:  parseInt(document.getElementById('inp-mx').value),
       filtered:   filteredCb.checked,
+      find_contour:   findContourCb.checked,
     };
 
     detectBtn.disabled  = true;
@@ -1002,7 +1068,7 @@
 
   function sendCleanup(ids) {
     ids.forEach(sid => {
-      // sendBeacon — гарантированно уходит даже при закрытии вкладки
+      // sendBeacon - гарантированно уходит даже при закрытии вкладки
       const blob = new Blob([JSON.stringify({ session_id: sid })],
                             { type: 'application/json' });
       navigator.sendBeacon('/cleanup', blob);
@@ -1014,7 +1080,7 @@
     sendCleanup(allSessionIds());
   });
 
-  // Heartbeat: пока вкладка открыта — продлеваем TTL на сервере каждые 5 мин
+  // Heartbeat: пока вкладка открыта - продлеваем TTL на сервере каждые 5 мин
   setInterval(() => {
     allSessionIds().forEach(sid => {
       fetch('/ping', {

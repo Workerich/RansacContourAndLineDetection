@@ -52,7 +52,7 @@ def _remove_session(session_id: str) -> None:
 def _gc_tick() -> None:
     """
     Вызывается при каждом запросе, но реально работает не чаще раз в GC_INTERVAL.
-    Потоки не нужны — PythonAnywhere их не поддерживает.
+    Потоки не нужны - PythonAnywhere их не поддерживает.
     """
     global _last_gc
     now = time.time()
@@ -85,7 +85,7 @@ def _check_image_size(filepath: str):
     return w, h
 
 
-def run_contour_script(input_path, session_id, w, E, min_length, max_lines, filtered):
+def run_contour_script(input_path, session_id, model_type, w, E, min_length, max_lines, filtered, find_contour):
     """
     Здесь будет выполнен скрипт обнаружения контуров.
 
@@ -108,7 +108,7 @@ def run_contour_script(input_path, session_id, w, E, min_length, max_lines, filt
     os.makedirs(result_dir, exist_ok=True)
 
     import cv2
-    msg_rc, img = rc.process_ransac(input_path, w, E, min_length, max_lines, filtered)
+    msg_rc, img = rc.process_ransac(input_path, model_type, find_contour, w, E, min_length, max_lines, filtered)
     cv2.imwrite(os.path.join(result_dir, 'ransac.png'), img)
 
     msg_mnk, img = mnk.process_mnk(input_path)
@@ -171,11 +171,13 @@ def detect():
         return jsonify({'error': 'Неверные параметры запроса'}), 400
 
     try:
-        w          = float(data['w'])
-        E          = float(data['E'])
-        min_length = int(data['min_length'])
-        max_lines  = int(data['max_lines'])
-        filtered   = bool(data.get('filtered', False))
+        w            = float(data['w'])
+        E            = float(data['E'])
+        min_length   = int(data['min_length'])
+        max_lines    = int(data['max_lines'])
+        filtered     = bool(data.get('filtered', False))
+        model_type   = data.get('model_type', 'line')
+        find_contour = bool(data.get('filtered', False))
     except (KeyError, ValueError, TypeError) as ex:
         return jsonify({'error': f'Ошибка параметров: {ex}'}), 400
 
@@ -203,14 +205,14 @@ def detect():
     print(img_w, img_h)
     if img_w * img_h > MAX_PIXELS:
         return jsonify({
-            'error':      (f'Допустимый размер — менее {MAX_DIMENSION}×{MAX_DIMENSION} пикселей. '
+            'error':      (f'Допустимый размер - менее {MAX_DIMENSION}×{MAX_DIMENSION} пикселей. '
                            f'Ваше изображение: {img_w}×{img_h} px.'),
             'size_error': True,
         }), 422
 
     try:
         results = run_contour_script(
-            filepath, session_id, w, E, min_length, max_lines, filtered
+            filepath, session_id, model_type, w, E, min_length, max_lines, filtered, find_contour
         )
         _touch(session_id)
     except Exception as e:
@@ -238,12 +240,12 @@ def serve_result(session_id, filename):
 
 @app.route('/ping', methods=['POST'])
 def ping():
-    """Heartbeat от клиента — продлевает TTL сессии."""
+    """Heartbeat от клиента - продлевает TTL сессии."""
     data       = request.get_json(silent=True) or {}
     session_id = data.get('session_id', '')
     if session_id:
         _touch(session_id)
-    return '', 204  # No Content — минимальный ответ
+    return '', 204  # No Content - минимальный ответ
 
 
 @app.route('/cleanup', methods=['POST'])

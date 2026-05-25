@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import time
 
 
 def mnk_line(points):
@@ -212,11 +213,13 @@ def fit_and_draw(points, img_color):
     print("Аппроксимация моделей:")
 
     # Выбираем лучшую модель
+    created = time.time()
     best_model, best_name, best_rmse, all_results = select_best_model(points)
+    ended = time.time()
 
     if best_model is None:
-        print("Не удалось построить ни одну модель")
-        return img_color, None, None
+        msg = "Не удалось построить ни одну модель"
+        return img_color, None, msg
 
     # Копируем изображение для отрисовки
     result_img = img_color.copy()
@@ -224,7 +227,8 @@ def fit_and_draw(points, img_color):
     # Рисуем лучшую модель красным цветом
     draw_model(result_img, best_model, best_name, color=(0, 0, 255), thickness=1)
 
-    return result_img, best_name, points
+    msg = f"Возможно - {best_name}\nВремя {round(ended - created, 2)} сек"
+    return result_img, best_name, msg
 
 
 # ========== Пример использования с вашей функцией ==========
@@ -270,6 +274,6 @@ def process_mnk(image_path, threshold=80, bininv=False):
         return img_color, None
 
     # Строим аппроксимацию и рисуем
-    result_img, best_name, _ = fit_and_draw(points, img_color)
+    result_img, best_name, msg = fit_and_draw(points, img_color)
 
-    return f"Возможно - {best_name}", result_img
+    return msg, result_img
