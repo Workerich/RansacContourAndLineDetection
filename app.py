@@ -177,7 +177,7 @@ def detect():
         max_lines    = int(data['max_lines'])
         filtered     = bool(data.get('filtered', False))
         model_type   = data.get('model_type', 'line')
-        find_contour = bool(data.get('filtered', False))
+        find_contour = bool(data.get('find_contour', False))
     except (KeyError, ValueError, TypeError) as ex:
         return jsonify({'error': f'Ошибка параметров: {ex}'}), 400
 
