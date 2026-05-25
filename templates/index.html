@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Детектор контуров</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,300&family=Epilogue:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:           #f7f7f5;
+      --surface:      #ffffff;
+      --border:       #e4e4e0;
+      --border-hover: #c8c8c2;
+      --accent:       #1a1a1a;
+      --accent2:      #5a5a5a;
+      --text:         #1a1a1a;
+      --muted:        #9a9a94;
+      --card-bg:      #fafaf8;
+      --error:        #c0392b;
+      --ok:           #27ae60;
+      --radius:       10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Epilogue', sans-serif;
+      font-size: 15px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 56px 20px 100px;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 44px;
+    }
+    header h1 {
+      font-family: 'Fraunces', serif;
+      font-weight: 900;
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      font-optical-sizing: auto;
+      color: var(--text);
+    }
+    header .tagline {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    /* ── Description cards ── */
+    .description {
+      width: 100%;
+      max-width: 720px;
+      margin-bottom: 24px;
+      display: grid;
+      gap: 10px;
+    }
+    .desc-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px 16px 24px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.18s;
+    }
+    .desc-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+    }
+    .desc-card.c-dark::before  { background: #1a1a1a; }
+    .desc-card.c-mid::before   { background: #a0a09a; }
+    .desc-card.c-light::before { background: #d0d0ca; }
+    .desc-card:hover { border-color: var(--border-hover); }
+
+    .desc-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; }
+    .desc-label {
+      font-family: 'Fraunces', serif;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      color: var(--muted);
+    }
+    .desc-text {
+      font-size: 0.76rem;
+      line-height: 1.75;
+      color: #6e6e68;
+    }
+    .desc-text em { font-style: normal; color: var(--text); }
+
+    /* ── Algorithm steps ── */
+    .algo-steps {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .algo-step {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 0.6rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent2);
+      margin-top: 1px;
+    }
+    .step-text {
+      font-size: 0.74rem;
+      line-height: 1.65;
+      color: #6e6e68;
+    }
+    .step-text em { font-style: normal; color: var(--text); }
+
+    /* ── Params info table ── */
+    .params-info {
+      width: 100%;
+      max-width: 720px;
+      margin-bottom: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .params-info-header {
+      padding: 13px 20px 11px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .params-info-header span {
+      font-family: 'Fraunces', serif;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .params-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .params-table tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.12s;
+    }
+    .params-table tr:last-child { border-bottom: none; }
+    .params-table tr:hover { background: var(--bg); }
+    .params-table td {
+      padding: 9px 16px;
+      font-size: 0.74rem;
+      vertical-align: top;
+    }
+    .param-name {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      width: 110px;
+    }
+    .param-type {
+      color: var(--muted);
+      font-size: 0.65rem;
+      white-space: nowrap;
+      padding-top: 11px;
+      width: 90px;
+    }
+    .param-desc { color: #6e6e68; line-height: 1.6; }
+
+    /* ── Main card ── */
+    .card {
+      width: 100%;
+      max-width: 720px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      position: relative;
+    }
+    .card + .card { margin-top: 20px; }
+
+    /* ── Param inputs grid ── */
+    .params-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    @media (max-width: 560px) {
+      .params-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .param-field { display: flex; flex-direction: column; gap: 5px; }
+    .param-field label {
+      font-family: 'Fraunces', serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+    .param-field .param-hint {
+      font-size: 0.6rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .param-field input[type="number"] {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      font-family: 'Epilogue', sans-serif;
+      font-size: 0.8rem;
+      color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -moz-appearance: textfield;
+    }
+    .param-field input[type="number"]::-webkit-inner-spin-button,
+    .param-field input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .param-field input[type="number"]:focus {
+      outline: none;
+      border-color: var(--border-hover);
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.04);
+    }
+    .param-field input.invalid {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(192,57,43,0.07);
+    }
+
+    /* ── Checkbox ── */
+    .checkbox-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: flex-start;
+    }
+    .checkbox-field label.top-label {
+      font-family: 'Fraunces', serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .checkbox-field .param-hint {
+      font-size: 0.6rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      height: 32px;
+    }
+    .toggle-wrap input[type="checkbox"] { display: none; }
+    .toggle-track {
+      width: 36px;
+      height: 20px;
+      background: var(--border);
+      border-radius: 20px;
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+    }
+    .toggle-wrap input:checked + .toggle-track { background: #1a1a1a; }
+    .toggle-wrap input:checked + .toggle-track::after { transform: translateX(16px); }
+    .toggle-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+    .toggle-wrap:has(input:checked) .toggle-label { color: var(--text); }
+
+    /* ── Field error messages ── */
+    .field-error {
+      font-size: 0.62rem;
+      color: var(--error);
+      min-height: 14px;
+      margin-top: 2px;
+    }
+
+    /* ── Drop zone ── */
+    #drop-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    #drop-zone:hover, #drop-zone.drag-over {
+      border-color: var(--border-hover);
+      background: #f0f0ec;
+    }
+    .drop-icon {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+      display: block;
+      transition: transform 0.3s;
+      filter: grayscale(1);
+    }
+    #drop-zone:hover .drop-icon { transform: translateY(-3px) scale(1.04); }
+    .drop-label {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+    .drop-sub { font-size: 0.7rem; color: var(--muted); }
+    #file-input { display: none; }
+
+    /* size error under drop zone */
+    #size-error {
+      font-size: 0.7rem;
+      color: var(--error);
+      margin-top: 8px;
+      min-height: 16px;
+      text-align: center;
+    }
+
+    /* ── Preview ── */
+    #preview-wrap {
+      display: none;
+      margin-top: 16px;
+      position: relative;
+    }
+    #preview-wrap img {
+      width: 100%;
+      max-height: 280px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .preview-badge {
+      position: absolute;
+      top: 10px; left: 10px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    #remove-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'Epilogue', sans-serif;
+      font-size: 0.68rem;
+      padding: 3px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    #remove-btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      border-radius: 7px;
+      font-family: 'Epilogue', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s;
+      padding: 11px 22px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--accent2);
+    }
+    .btn-outline:hover:not(:disabled) {
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+    .btn-primary {
+      background: var(--text);
+      color: #fff;
+      font-weight: 700;
+      border: 1px solid var(--text);
+    }
+    .btn-primary:hover:not(:disabled) { background: #333; border-color: #333; }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    /* ── Status ── */
+    #status {
+      margin-top: 12px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      min-height: 18px;
+    }
+    #status.error { color: var(--error); }
+    #status.ok    { color: var(--ok); }
+
+    /* ── Loader ── */
+    .loader { display: none; margin-top: 32px; text-align: center; }
+    .loader.active { display: block; }
+    .loader-ring {
+      width: 40px; height: 40px;
+      border: 2px solid var(--border);
+      border-top-color: var(--text);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader p {
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+    /* ── Results ── */
+    #results { display: none; margin-top: 0; }
+    #results.visible { display: block; }
+
+    .section-title {
+      font-family: 'Fraunces', serif;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 560px) { .results-grid { grid-template-columns: 1fr; } }
+
+    .result-block {
+      border-radius: var(--radius);
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      animation: slideUp 0.35s ease both;
+    }
+    .result-block:nth-child(2) { animation-delay: 0.08s; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-header {
+      padding: 12px 14px 9px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .method-badge {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 0.63rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .result-detection {
+      font-size: 0.68rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .result-detection strong { color: var(--text); font-weight: 400; }
+    .result-img-wrap { padding: 10px; }
+    .result-img-wrap img {
+      width: 100%;
+      border-radius: 6px;
+      display: block;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .divider { height: 1px; background: var(--border); margin: 22px 0; }
+
+    #reset-banner { display: none; margin-top: 0; }
+    #reset-banner.visible { display: flex; justify-content: center; }
+    #reset-banner .btn { min-width: 240px; justify-content: center; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Детектор контуров</h1>
+  <p class="tagline">RANSAC &nbsp;·&nbsp; МНК &nbsp;·&nbsp; Анализ изображений</p>
+</header>
+
+<!-- Description -->
+<div class="description">
+  <div class="desc-card c-dark">
+    <span class="desc-icon">⚙️</span>
+    <div>
+      <p class="desc-label">RANSAC</p>
+      <p class="desc-text">
+        Вероятностный итеративный алгоритм, устойчивый к выбросам. Перед его запуском изображение
+        проходит предобработку — из него извлекаются потенциально значимые точки. Среди них
+        <em>возможно окажутся аномалии</em>, но это не проблема: RANSAC специально разработан
+        для работы с зашумлёнными данными и уверенно отделяет полезный сигнал от случайного шума.
+      </p>
+    </div>
+  </div>
+
+  <div class="desc-card c-mid">
+    <span class="desc-icon">🔬</span>
+    <div>
+      <p class="desc-label">Алгоритм нахождения контуров</p>
+      <p class="desc-text">Сам по себе RANSAC не работает напрямую с пикселями — нужна предварительная отборка точек.</p>
+      <div class="algo-steps">
+        <div class="algo-step">
+          <span class="step-num">1</span>
+          <span class="step-text">Изображение переводится в <em>HSV-формат</em>, из которого по каналу яркости (V) отбираются потенциально значимые пиксели.</span>
+        </div>
+        <div class="algo-step">
+          <span class="step-num">2</span>
+          <span class="step-text">RANSAC <em>итеративно</em> ищет наборы «хороших» точек, образующих линии — после каждой найденной линии уже использованные точки удаляются из выборки.</span>
+        </div>
+        <div class="algo-step">
+          <span class="step-num">3</span>
+          <span class="step-text">Опционально — <em>фильтрация выбросов</em> внутри каждой итерации для повышения точности аппроксимации.</span>
+        </div>
+        <div class="algo-step">
+          <span class="step-num">4</span>
+          <span class="step-text">Все найденные точки <em>закрашиваются красным</em> на результирующем изображении.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="desc-card c-light">
+    <span class="desc-icon">📐</span>
+    <div>
+      <p class="desc-label">МНК — метод наименьших квадратов</p>
+      <p class="desc-text">
+        Классический детерминированный подход: минимизирует суммарное квадратичное отклонение
+        всех точек от искомой фигуры. <em>Быстрый и точный</em> на чистых данных, но чувствителен
+        к выбросам — именно поэтому сравнение с RANSAC так показательно.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Params info table -->
+<div class="params-info">
+  <div class="params-info-header">
+    <span>⚙ Параметры алгоритма</span>
+  </div>
+  <table class="params-table">
+    <tr>
+      <td class="param-name">w</td>
+      <td class="param-type">float · (0, 1)</td>
+      <td class="param-desc">Ожидаемая доля «хороших» точек в наборе данных. Влияет на число итераций: чем меньше, тем больше попыток потребуется RANSAC для нахождения корректной гипотезы.</td>
+    </tr>
+    <tr>
+      <td class="param-name">E</td>
+      <td class="param-type">float · &gt; 0</td>
+      <td class="param-desc">Порог функции оценки принадлежности точки к гипотезе. Точки, отклонение которых не превышает E, считаются «хорошими» (инлайерами).</td>
+    </tr>
+    <tr>
+      <td class="param-name">min_length</td>
+      <td class="param-type">int · px · &gt; 0</td>
+      <td class="param-desc">Минимальная длина линии в пикселях. Линии короче этого значения отбрасываются как незначимые.</td>
+    </tr>
+    <tr>
+      <td class="param-name">max_lines</td>
+      <td class="param-type">int · &gt; 0</td>
+      <td class="param-desc">Максимальное количество аппроксимируемых линий. Алгоритм останавливается, как только находит указанное число линий или исчерпывает точки.</td>
+    </tr>
+    <tr>
+      <td class="param-name">filtered</td>
+      <td class="param-type">bool</td>
+      <td class="param-desc">Включить фильтрацию выбросов на каждой итерации. При активации точки, сильно отклоняющиеся от найденной линии, дополнительно исключаются из выборки.</td>
+    </tr>
+  </table>
+</div>
+
+<!-- Upload card -->
+<div class="card" id="upload-card">
+
+  <!-- Param inputs -->
+  <div class="params-grid">
+    <div class="param-field">
+      <label for="inp-w">w</label>
+      <span class="param-hint">доля хороших точек</span>
+      <input type="number" id="inp-w" value="0.8" min="0.01" max="0.99" step="0.01" />
+      <span class="field-error" id="err-w"></span>
+    </div>
+    <div class="param-field">
+      <label for="inp-e">E</label>
+      <span class="param-hint">порог принадлежности</span>
+      <input type="number" id="inp-e" value="20" min="0.01" step="0.1" />
+      <span class="field-error" id="err-e"></span>
+    </div>
+    <div class="param-field">
+      <label for="inp-ml">min_length</label>
+      <span class="param-hint">мин. длина, px</span>
+      <input type="number" id="inp-ml" value="20" min="1" step="1" />
+      <span class="field-error" id="err-ml"></span>
+    </div>
+    <div class="param-field">
+      <label for="inp-mx">max_lines</label>
+      <span class="param-hint">макс. линий</span>
+      <input type="number" id="inp-mx" value="5" min="1" step="1" />
+      <span class="field-error" id="err-mx"></span>
+    </div>
+    <div class="checkbox-field">
+      <span class="top-label">filtered</span>
+      <span class="param-hint">фильтр выбросов</span>
+      <label class="toggle-wrap">
+        <input type="checkbox" id="inp-filtered" />
+        <span class="toggle-track"></span>
+        <span class="toggle-label" id="filtered-label">выкл</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Drop zone -->
+  <div id="drop-zone">
+    <span class="drop-icon">🖼️</span>
+    <p class="drop-label">Перетащите изображение сюда</p>
+    <p class="drop-sub">или нажмите кнопку ниже, чтобы выбрать файл</p>
+  </div>
+  <div id="size-error"></div>
+
+  <div id="preview-wrap">
+    <span class="preview-badge">✓ Изображение загружено</span>
+    <img id="preview-img" src="" alt="Предпросмотр" />
+    <button id="remove-btn">✕ Убрать</button>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" id="choose-btn">
+      <span>📁</span> Выбрать файл
+    </button>
+    <button class="btn btn-primary" id="detect-btn" disabled>
+      <span>🔍</span> Найти контуры
+    </button>
+  </div>
+  <input type="file" id="file-input" accept="image/*" />
+
+  <div id="status"></div>
+</div>
+
+<!-- Loader -->
+<div class="loader" id="loader">
+  <div class="loader-ring"></div>
+  <p>Обработка изображения…</p>
+</div>
+
+<!-- Results card -->
+<div class="card" id="results" style="max-width:720px; margin-top:24px;">
+  <p class="section-title">Результаты анализа</p>
+  <div class="results-grid">
+    <div class="result-block">
+      <div class="result-header">
+        <span class="method-badge">RANSAC</span>
+        <span class="result-detection">Обнаружено:<br><strong id="text-ransac">—</strong></span>
+      </div>
+      <div class="result-img-wrap">
+        <img id="img-ransac" src="" alt="Результат RANSAC" />
+      </div>
+    </div>
+    <div class="result-block">
+      <div class="result-header">
+        <span class="method-badge">МНК</span>
+        <span class="result-detection">Обнаружено:<br><strong id="text-mnk">—</strong></span>
+      </div>
+      <div class="result-img-wrap">
+        <img id="img-mnk" src="" alt="Результат МНК" />
+      </div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div id="reset-banner" class="visible">
+    <button class="btn btn-outline" id="new-btn">↩ Загрузить новое изображение</button>
+  </div>
+</div>
+
+<script>
+  const dropZone    = document.getElementById('drop-zone');
+  const fileInput   = document.getElementById('file-input');
+  const chooseBtn   = document.getElementById('choose-btn');
+  const detectBtn   = document.getElementById('detect-btn');
+  const previewWrap = document.getElementById('preview-wrap');
+  const previewImg  = document.getElementById('preview-img');
+  const removeBtn   = document.getElementById('remove-btn');
+  const statusEl    = document.getElementById('status');
+  const sizeError   = document.getElementById('size-error');
+  const loader      = document.getElementById('loader');
+  const resultsEl   = document.getElementById('results');
+  const newBtn      = document.getElementById('new-btn');
+  const filteredCb  = document.getElementById('inp-filtered');
+  const filteredLbl = document.getElementById('filtered-label');
+
+  filteredCb.addEventListener('change', () => {
+    filteredLbl.textContent = filteredCb.checked ? 'вкл' : 'выкл';
+  });
+
+  let uploadedFilename = null;
+  let sessionId        = null;
+  let currentSessionId = null;
+
+  // ── Param validation ────────────────────────────────────────────────────
+
+  function validateParams() {
+    const fields = [
+      { id: 'inp-w',  errId: 'err-w',  label: 'w',
+        check: v => v > 0 && v < 1.0,
+        msg: 'Должно быть от 0 до 1 (не включительно)' },
+      { id: 'inp-e',  errId: 'err-e',  label: 'E',
+        check: v => v > 0,
+        msg: 'Должно быть больше 0' },
+      { id: 'inp-ml', errId: 'err-ml', label: 'min_length',
+        check: v => v > 0 && Number.isInteger(v),
+        msg: 'Целое число больше 0' },
+      { id: 'inp-mx', errId: 'err-mx', label: 'max_lines',
+        check: v => v > 0 && Number.isInteger(v),
+        msg: 'Целое число больше 0' },
+    ];
+
+    let valid = true;
+    fields.forEach(f => {
+      const inp = document.getElementById(f.id);
+      const err = document.getElementById(f.errId);
+      const v   = parseFloat(inp.value);
+      if (isNaN(v) || !f.check(v)) {
+        inp.classList.add('invalid');
+        err.textContent = f.msg;
+        valid = false;
+      } else {
+        inp.classList.remove('invalid');
+        err.textContent = '';
+      }
+    });
+    return valid;
+  }
+
+  // live validation
+  ['inp-w','inp-e','inp-ml','inp-mx'].forEach(id => {
+    document.getElementById(id).addEventListener('input', validateParams);
+  });
+
+  // ── Helpers ─────────────────────────────────────────────────────────────
+
+  function setStatus(msg, type = '') {
+    statusEl.textContent = msg;
+    statusEl.className   = type;
+  }
+
+  function setSizeError(msg) {
+    sizeError.textContent = msg;
+  }
+
+  function showPreview(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      previewImg.src = e.target.result;
+      previewWrap.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function resetUpload() {
+    uploadedFilename = null;
+    sessionId        = null;
+    fileInput.value  = '';
+    previewWrap.style.display = 'none';
+    previewImg.src   = '';
+    detectBtn.disabled = true;
+    setStatus('');
+    setSizeError('');
+  }
+
+  function showResults(data) {
+    document.getElementById('text-ransac').textContent = data.text1;
+    document.getElementById('text-mnk').textContent    = data.text2;
+    document.getElementById('img-ransac').src = data.ransac_img + '?t=' + Date.now();
+    document.getElementById('img-mnk').src    = data.mnk_img    + '?t=' + Date.now();
+    resultsEl.classList.add('visible');
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function hideResults() {
+    resultsEl.classList.remove('visible');
+    document.getElementById('img-ransac').src = '';
+    document.getElementById('img-mnk').src    = '';
+  }
+
+  // ── Upload ──────────────────────────────────────────────────────────────
+
+  async function uploadFile(file) {
+    resetUpload();
+    hideResults();
+    setStatus('Загрузка…');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res  = await fetch('/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) { setStatus(data.error || 'Ошибка загрузки', 'error'); return; }
+
+      uploadedFilename = data.filename;
+      sessionId        = data.session_id;
+      showPreview(file);
+      detectBtn.disabled = false;
+      setStatus('✓ Изображение принято. Можно запускать анализ.', 'ok');
+    } catch {
+      setStatus('Сетевая ошибка при загрузке файла', 'error');
+    }
+  }
+
+  // ── Detect ──────────────────────────────────────────────────────────────
+
+  detectBtn.addEventListener('click', async () => {
+    if (!uploadedFilename || !sessionId) return;
+    if (!validateParams()) {
+      setStatus('Исправьте ошибки в параметрах перед запуском.', 'error');
+      return;
+    }
+
+    if (currentSessionId && currentSessionId !== sessionId) {
+      fetch('/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: currentSessionId })
+      });
+    }
+
+    const params = {
+      session_id: sessionId,
+      filename:   uploadedFilename,
+      w:          parseFloat(document.getElementById('inp-w').value),
+      E:          parseFloat(document.getElementById('inp-e').value),
+      min_length: parseInt(document.getElementById('inp-ml').value),
+      max_lines:  parseInt(document.getElementById('inp-mx').value),
+      filtered:   filteredCb.checked,
+    };
+
+    detectBtn.disabled  = true;
+    chooseBtn.disabled  = true;
+    loader.classList.add('active');
+    setStatus('');
+    setSizeError('');
+    hideResults();
+
+    try {
+      const res  = await fetch('/detect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        // size error shown under drop zone, others in status
+        if (data.size_error) {
+          setSizeError(data.error);
+        } else {
+          setStatus(data.error || 'Ошибка при обработке', 'error');
+        }
+        detectBtn.disabled = false;
+      } else {
+        currentSessionId = sessionId;
+        resetUpload();
+        showResults(data);
+      }
+    } catch {
+      setStatus('Сетевая ошибка при запуске анализа', 'error');
+      detectBtn.disabled = false;
+    } finally {
+      loader.classList.remove('active');
+      chooseBtn.disabled = false;
+    }
+  });
+
+  // ── New image ────────────────────────────────────────────────────────────
+
+  newBtn.addEventListener('click', () => {
+    hideResults();
+    resetUpload();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  removeBtn.addEventListener('click', () => resetUpload());
+
+  chooseBtn.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('click',  () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) uploadFile(fileInput.files[0]);
+  });
+
+  // ── Drag & drop ──────────────────────────────────────────────────────────
+
+  ['dragenter','dragover'].forEach(evt =>
+    dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add('drag-over'); })
+  );
+  ['dragleave','dragend'].forEach(evt =>
+    dropZone.addEventListener(evt, () => dropZone.classList.remove('drag-over'))
+  );
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) uploadFile(file);
+  });
+
+  // ── Paste ────────────────────────────────────────────────────────────────
+
+  document.addEventListener('paste', e => {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) { uploadFile(item.getAsFile()); break; }
+    }
+  });
+
+  // ── Session cleanup ───────────────────────────────────────────────────────
+  // Собираем все известные session_id этой вкладки (загруженный + результаты)
+  function allSessionIds() {
+    const ids = new Set();
+    if (sessionId)        ids.add(sessionId);
+    if (currentSessionId) ids.add(currentSessionId);
+    return [...ids];
+  }
+
+  function sendCleanup(ids) {
+    ids.forEach(sid => {
+      // sendBeacon — гарантированно уходит даже при закрытии вкладки
+      const blob = new Blob([JSON.stringify({ session_id: sid })],
+                            { type: 'application/json' });
+      navigator.sendBeacon('/cleanup', blob);
+    });
+  }
+
+  // Закрытие / перезагрузка вкладки
+  window.addEventListener('beforeunload', () => {
+    sendCleanup(allSessionIds());
+  });
+
+  // Heartbeat: пока вкладка открыта — продлеваем TTL на сервере каждые 5 мин
+  setInterval(() => {
+    allSessionIds().forEach(sid => {
+      fetch('/ping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sid }),
+        keepalive: true,
+      }).catch(() => {});
+    });
+  }, 5 * 60 * 1000);
+</script>
+</body>
+</html>
