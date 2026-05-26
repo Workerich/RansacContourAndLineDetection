@@ -668,8 +668,8 @@
     </tr>
     <tr>
       <td class="param-name">min_length</td>
-      <td class="param-type">int px &gt; 0</td>
-      <td class="param-desc">Минимальная длина линии в пикселях. Линии короче этого значения отбрасываются как незначимые.</td>
+      <td class="param-type">int &gt; 0</td>
+      <td class="param-desc">Минимальный порог для количества точек, принадлежащих выбранной моделе.</td>
     </tr>
     <tr>
       <td class="param-name">max_contours</td>
@@ -718,7 +718,7 @@
     </div>
     <div class="param-field">
       <label for="inp-ml">min_length</label>
-      <span class="param-hint">мин. длина, px</span>
+      <span class="param-hint">мин. кол-во точек</span>
       <input type="number" id="inp-ml" value="20" min="1" step="1" />
       <span class="field-error" id="err-ml"></span>
     </div>
