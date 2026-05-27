@@ -257,7 +257,7 @@ def get_points_from_image(img_color, threshold=80, bininv=False):
     print(f"Найдено точек: {len(points)}")
     return points
 
-def process_mnk(image_path, threshold=80, bininv=False):
+def process_mnk(image_path, threshold=100, bininv=False):
     """
     Полный процесс: загрузка -> поиск точек -> аппроксимация -> результат
     """
