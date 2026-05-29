@@ -218,10 +218,10 @@ def ransac_parabola(arr, iterations=100, E=5):
 
 
 # OTHER
-def find_contours(arr, ransac_model, w, E, min_length, max_lines, filtered=True):
+def find_contours(arr, ransac_model, n, w, E, min_length, max_lines, filtered=True):
     all_lines = []
     remaining = arr
-    k = int(math.log(1 - 0.99) / math.log(1 - w ** 2))
+    k = int(math.log(1 - 0.99) / math.log(1 - w ** n))
     print(k, "Итераций")
     anomalies = int(len(arr) * (1 - w) / max_lines)
     print(anomalies, "Теоретическое кол-во выбросов")
@@ -244,19 +244,20 @@ def find_contours(arr, ransac_model, w, E, min_length, max_lines, filtered=True)
 
 
 ransac_models = {
-    "line": (ransac_line, "прямая"),
-    "circle": (ransac_circle, "окружность"),
-    "parabola": (ransac_parabola, "парабола")
+    "line": (ransac_line, 2, "прямая"),
+    "circle": (ransac_circle, 3, "окружность"),
+    "parabola": (ransac_parabola, 3, "парабола")
 }
 
 def process_ransac(path, model_type, find_contour, w, E, min_length, max_contours, filtered):
     img = cv2.imread(path)
     arr = get_points_from_image(img, threshold=100)
-    ransac_model, model_name = ransac_models[model_type]
+    ransac_model, min_num_points, model_name = ransac_models[model_type]
 
     if find_contour:
         created = time.time()
-        good_contours = find_contours(arr, ransac_model, w, E, min_length, max_contours, filtered)
+        good_contours = find_contours(arr, ransac_model, min_num_points,
+                                      w, E, min_length, max_contours, filtered)
         ended = time.time()
         good_points = set()
         for line in good_contours:
