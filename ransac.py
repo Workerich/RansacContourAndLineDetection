@@ -28,9 +28,13 @@ def get_points_from_image(img_color, threshold=80, bininv=False):
 
 
 # DISTANCES
-def dist_to_line(p, k, b):
-    return abs(k * p[0] - p[1] + b) / (k ** 2 + 1) ** 0.5
+def dist_point_to_point(p1, p2):
+    x1, y1 = p1
+    x2, y2 = p2
+    return ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
 
+def dist_to_line(p, a, b, c):
+    return abs(a * p[0] + b * p[1] + c) / (a * a + b * b) ** 0.5
 
 def dist_to_circle(p, cx, cy, r):
     x, y = p
@@ -45,11 +49,14 @@ def dist_to_parabola(p, a, b, c):
 
 # PARAMETERS
 def get_line_params(p1, p2):
-    x = np.array([p1[0], p2[0]])
-    y = np.array([p1[1], p2[1]])
-    k, b = np.polyfit(x, y, 1)
-    return k, b
+    x1, y1 = p1
+    x2, y2 = p2
 
+    a = y1 - y2
+    b = x2 - x1
+    c = x1 * y2 - x2 * y1
+
+    return a, b, c
 
 def get_circle_params(p1, p2, p3):
     x1, y1 = p1
@@ -136,6 +143,44 @@ def clean_res(arr, E=5):
 
 
 # RANSAC
+def get_point_projection(p0, p1, p2):
+    x0, y0 = p0
+    x1, y1 = p1
+    x2, y2 = p2
+
+    c = (x0 - x1) * (x2 - x1) + (y0 - y1) * (y2 - y1)
+    z = (x2 - x1) ** 2 + (y2 - y1) ** 2
+
+    return c / z
+
+def ransac_line_segment(arr, iterations=50, E=5):
+    best_points = []
+    max_inliers = -1
+
+    for _ in range(iterations):
+        idx = random.sample(range(len(arr)), 2)
+        p1, p2 = arr[idx[0]], arr[idx[1]]
+        a, b, c = get_line_params(p1, p2)
+
+        inliers = []
+        for p in arr:
+            t = get_point_projection(p, p1, p2)
+            if t <= 0:
+                d = dist_point_to_point(p, p1)
+            elif t >= 1:
+                d = dist_point_to_point(p, p2)
+            else:
+                d = dist_to_line(p, a, b, c)
+
+            if d <= E:
+                inliers.append(p)
+
+        if len(inliers) >= max_inliers:
+            max_inliers = len(inliers)
+            best_points = inliers
+
+    return best_points
+
 def ransac_line(arr, iterations=50, E=5):
     best_points = []
     max_inliers = -1
@@ -147,8 +192,8 @@ def ransac_line(arr, iterations=50, E=5):
         if p1[0] == p2[0]:
             inliers = [p for p in arr if abs(p[0] - p1[0]) < E]
         else:
-            k, b = get_line_params(p1, p2)
-            inliers = [p for p in arr if dist_to_line(p, k, b) < E]
+            a, b, c = get_line_params(p1, p2)
+            inliers = [p for p in arr if dist_to_line(p, a, b, c) < E]
 
         if len(inliers) >= max_inliers:
             max_inliers = len(inliers)
@@ -243,7 +288,7 @@ def find_contours(arr, ransac_model, iterations, w, E, min_length, max_lines, fi
 
 
 ransac_models = {
-    "line": (ransac_line, 2, "прямая"),
+    "line": (ransac_line_segment, 2, "прямая"),
     "circle": (ransac_circle, 3, "окружность"),
     "parabola": (ransac_parabola, 3, "парабола")
 }
